@@ -8,6 +8,10 @@ Apple Studio Display and Apple Studio Display XDR on macOS.
 It talks directly to CoreGraphics and dynamically loaded macOS display
 frameworks. It does not open System Settings or emulate mouse clicks.
 
+This application was created with OpenAI Codex under the direction of the
+project author, who defined the requirements and tested its behavior on real
+Apple displays.
+
 ## Features
 
 - Lists connected supported displays and assigns stable ordinals for the
