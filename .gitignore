@@ -1,0 +1,21 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Xcode and editor state
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+.idea/
+.vscode/
+
+# macOS metadata and local binaries
+.DS_Store
+*.dSYM/
+/displayctl
+
+# Local ChatGPT project metadata and synchronized reference copies
+/AGENTS.md
+/sources/
+/.agents/
+/.codex/
