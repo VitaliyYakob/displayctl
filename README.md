@@ -2,6 +2,11 @@
 
 [Русская версия](README.ru.md)
 
+Current release: [displayctl 1.0.2](https://github.com/VitaliyYakob/displayctl/releases/tag/v1.0.2).
+Download the ready-to-run Apple silicon archive and `SHA256SUMS` from the
+release page. See the [English changelog](CHANGELOG.md) or
+[Описание изменений на русском](CHANGELOG.ru.md).
+
 `displayctl` is a Swift command-line utility for inspecting and controlling
 Apple Studio Display and Apple Studio Display XDR on macOS.
 
@@ -33,7 +38,7 @@ Apple displays.
 ## Requirements
 
 - macOS 13 or later.
-- Xcode Command Line Tools with Swift 5.9 or later.
+- Xcode Command Line Tools with Swift 5.9 or later, when building from source.
 - Apple Studio Display or Apple Studio Display XDR.
 
 The project has been developed and tested on Apple silicon with current macOS
@@ -260,6 +265,7 @@ the behavior of System Settings.
 ```text
 App/displayctl/       Swift source files
 Tests/DisplayctlTests/ Regression tests
+releases/<version>/  Local release executable, archive, and checksum (ignored by Git)
 Package.swift         Swift Package Manager manifest
 .github/workflows/    GitHub Actions build and test verification
 README.ru.md          Russian documentation
