@@ -19,6 +19,11 @@ let package = Package(
                 .linkedFramework("CoreGraphics"),
                 .linkedFramework("IOKit")
             ]
+        ),
+        .testTarget(
+            name: "DisplayctlTests",
+            dependencies: ["displayctl"],
+            path: "Tests/DisplayctlTests"
         )
     ]
 )

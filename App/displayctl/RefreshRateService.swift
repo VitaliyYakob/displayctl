@@ -132,7 +132,7 @@ final class RefreshRateService {
         for mode in compatibleModes {
             let modeID = mode.ioDisplayModeID
             let maxHz = mode.refreshRate
-            let adaptive = isDisplayModeVRR?(display.id, modeID) != 0
+            let adaptive = isAdaptiveMode(displayID: display.id, modeID: modeID)
             let minHz = adaptive ? minimumRefreshRate(displayID: display.id, modeID: modeID) : nil
             let normalizedMax = maxHz > 0 ? maxHz : Double(NSScreenMaximumFPS.value(for: display.id) ?? 0)
             guard normalizedMax > 0 else { continue }
@@ -413,11 +413,11 @@ final class RefreshRateService {
     ) -> CGDisplayMode? {
         if requested.isAdaptive {
             if modes.contains(where: { $0.ioDisplayModeID == current.ioDisplayModeID }),
-               isDisplayModeVRR?(displayID, current.ioDisplayModeID) != 0 {
+               isAdaptiveMode(displayID: displayID, modeID: current.ioDisplayModeID) {
                 return current
             }
             return modes
-                .filter { isDisplayModeVRR?(displayID, $0.ioDisplayModeID) != 0 }
+                .filter { isAdaptiveMode(displayID: displayID, modeID: $0.ioDisplayModeID) }
                 .min {
                     abs(normalizedRefreshRate($0, displayID: displayID) - requested.maximumHz)
                         < abs(normalizedRefreshRate($1, displayID: displayID) - requested.maximumHz)
@@ -425,12 +425,12 @@ final class RefreshRateService {
         }
 
         if modes.contains(where: { $0.ioDisplayModeID == current.ioDisplayModeID }),
-           isDisplayModeVRR?(displayID, current.ioDisplayModeID) == 0,
+           !isAdaptiveMode(displayID: displayID, modeID: current.ioDisplayModeID),
            abs(normalizedRefreshRate(current, displayID: displayID) - requested.maximumHz) <= 0.05 {
             return current
         }
         let closest = modes
-            .filter { isDisplayModeVRR?(displayID, $0.ioDisplayModeID) == 0 }
+            .filter { !isAdaptiveMode(displayID: displayID, modeID: $0.ioDisplayModeID) }
             .min {
                 abs(normalizedRefreshRate($0, displayID: displayID) - requested.maximumHz)
                     < abs(normalizedRefreshRate($1, displayID: displayID) - requested.maximumHz)
@@ -445,9 +445,9 @@ final class RefreshRateService {
         preserving current: CGDisplayMode,
         displayID: CGDirectDisplayID
     ) -> CGDisplayMode? {
-        let currentIsAdaptive = isDisplayModeVRR?(displayID, current.ioDisplayModeID) != 0
+        let currentIsAdaptive = isAdaptiveMode(displayID: displayID, modeID: current.ioDisplayModeID)
         let sameKind = modes.filter {
-            (isDisplayModeVRR?(displayID, $0.ioDisplayModeID) != 0) == currentIsAdaptive
+            isAdaptiveMode(displayID: displayID, modeID: $0.ioDisplayModeID) == currentIsAdaptive
         }
         let currentHz = normalizedRefreshRate(current, displayID: displayID)
         if let closest = sameKind.min(by: {
@@ -457,6 +457,16 @@ final class RefreshRateService {
             return closest
         }
         return modes.first(where: isDefaultMode) ?? modes.first
+    }
+
+    private func isAdaptiveMode(displayID: CGDirectDisplayID, modeID: Int32) -> Bool {
+        Self.isAdaptive(vrrResult: isDisplayModeVRR?(displayID, modeID))
+    }
+
+    static func isAdaptive(vrrResult: Int32?) -> Bool {
+        // Optional comparison would incorrectly classify nil as nonzero.
+        // A missing private API must never advertise Adaptive Sync support.
+        (vrrResult ?? 0) != 0
     }
 
     private func normalizedRefreshRate(_ mode: CGDisplayMode, displayID: CGDirectDisplayID) -> Double {

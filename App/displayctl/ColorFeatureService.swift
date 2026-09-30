@@ -124,7 +124,7 @@ final class ColorFeatureService {
 
         let requestedValue = target.enabledValue
         if current.enabled == requestedValue {
-            guard let confirmed = settledBlueLightStatus(),
+            guard let confirmed = settledBlueLightStatus(enabled: requestedValue),
                   confirmed.available,
                   confirmed.enabled == requestedValue else {
                 return .unsupported(L10n.text(
@@ -152,7 +152,7 @@ final class ColorFeatureService {
             }
         }
 
-        guard let confirmed = settledBlueLightStatus(),
+        guard let confirmed = settledBlueLightStatus(enabled: requestedValue),
               confirmed.available,
               confirmed.enabled == requestedValue else {
             return .unsupported(L10n.text(
@@ -197,15 +197,12 @@ final class ColorFeatureService {
         )
     }
 
-    private func settledBlueLightStatus() -> BlueLightStatus? {
-        var lastStatus: BlueLightStatus?
-        for attempt in 0..<5 {
-            Thread.sleep(forTimeInterval: attempt == 0 ? 0.2 : 0.1)
-            guard let status = blueLightStatus() else { continue }
-            lastStatus = status
-            if !status.available { return status }
-        }
-        return lastStatus
+    private func settledBlueLightStatus(enabled: Bool) -> BlueLightStatus? {
+        SettingConfirmation.wait(
+            read: { self.blueLightStatus() },
+            isSupported: { $0.available },
+            matches: { $0.enabled == enabled }
+        )
     }
 
     private func setNightShiftEnabled(_ enabled: Bool, client: NSObject) -> Bool {

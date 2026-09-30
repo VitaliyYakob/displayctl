@@ -95,7 +95,7 @@ final class BrightnessService {
         guard current.canChange else { return .unsupported(Self.profileUnsupportedMessage) }
 
         if Self.matches(current.value, percent: percent) {
-            guard let confirmed = settledStatus(for: display), confirmed.canChange else {
+            guard let confirmed = settledStatus(for: display, percent: percent), confirmed.canChange else {
                 return .unsupported(Self.profileUnsupportedMessage)
             }
             return Self.matches(confirmed.value, percent: percent)
@@ -114,7 +114,7 @@ final class BrightnessService {
             ))
         }
 
-        guard let confirmed = settledStatus(for: display),
+        guard let confirmed = settledStatus(for: display, percent: percent),
               confirmed.canChange,
               Self.matches(confirmed.value, percent: percent) else {
             return .unsupported(Self.profileUnsupportedMessage)
@@ -144,18 +144,17 @@ final class BrightnessService {
         canChangeBrightness?(display.id)
     }
 
-    private func settledStatus(for display: DisplayDevice) -> Status? {
-        var lastStatus: Status?
-        for attempt in 0..<5 {
-            Thread.sleep(forTimeInterval: attempt == 0 ? 0.2 : 0.1)
-            if canChange(for: display) == false {
-                return Status(value: 0, canChange: false)
-            }
-            guard let status = status(for: display) else { continue }
-            lastStatus = status
-            if !status.canChange { return status }
-        }
-        return lastStatus
+    private func settledStatus(for display: DisplayDevice, percent: Int) -> Status? {
+        SettingConfirmation.wait(
+            read: {
+                if self.canChange(for: display) == false {
+                    return Status(value: 0, canChange: false)
+                }
+                return self.status(for: display)
+            },
+            isSupported: { $0.canChange },
+            matches: { Self.matches($0.value, percent: percent) }
+        )
     }
 
     private func unavailableError() -> DisplayCtlError {

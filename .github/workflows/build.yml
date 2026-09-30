@@ -21,3 +21,6 @@ jobs:
 
       - name: Verify executable
         run: .build/release/displayctl --version
+
+      - name: Run regression tests
+        run: swift test

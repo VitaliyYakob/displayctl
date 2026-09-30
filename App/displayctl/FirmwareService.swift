@@ -16,52 +16,60 @@ final class FirmwareService {
         let firmware: String
     }
 
+    private let loadData: () -> Data?
     private lazy var records: [Record] = loadRecords()
 
-    func metadata(for display: DisplayDevice) -> Metadata {
-        guard let record = record(for: display) else {
+    init(loadData: @escaping () -> Data? = {
+        TimedProcessOutput.read(
+            executableURL: URL(fileURLWithPath: "/usr/sbin/system_profiler"),
+            arguments: ["SPDisplaysDataType", "-json", "-detailLevel", "full"]
+        )
+    }) {
+        self.loadData = loadData
+    }
+
+    func metadata(for display: DisplayDevice, among displays: [DisplayDevice]) -> Metadata {
+        guard let record = record(for: display, among: displays) else {
             return Metadata(serial: nil, firmware: nil)
         }
         return Metadata(serial: record.serial, firmware: record.firmware)
     }
 
-    private func record(for display: DisplayDevice) -> Record? {
+    private func record(for display: DisplayDevice, among displays: [DisplayDevice]) -> Record? {
         let validSerial = display.serialText != "0" && !display.serialText.isEmpty
-        if validSerial,
-           let match = records.first(where: { $0.serial?.caseInsensitiveCompare(display.serialText) == .orderedSame }) {
-            return match
+        if validSerial {
+            let matches = records.filter {
+                $0.serial?.caseInsensitiveCompare(display.serialText) == .orderedSame
+            }
+            let displaysWithSerial = displays.filter {
+                $0.serialText.caseInsensitiveCompare(display.serialText) == .orderedSame
+            }
+            if matches.count == 1 && displaysWithSerial.count == 1 { return matches[0] }
         }
 
         let idText = String(display.id)
-        if let match = records.first(where: { record in
+        let idMatches = records.filter { record in
             guard let candidate = record.displayID else { return false }
             return candidate == idText || candidate.lowercased() == String(format: "0x%x", display.id)
-        }) {
-            return match
         }
+        if idMatches.count == 1 { return idMatches[0] }
 
         let normalizedName = normalize(display.name)
+        // Names can identify a record only when both the connected-display
+        // list and the metadata list contain exactly one such display.
+        guard displays.filter({ normalize($0.name) == normalizedName }).count == 1 else {
+            return nil
+        }
         let nameMatches = records.filter { record in
             record.name.map(normalize) == normalizedName
         }
         if nameMatches.count == 1 { return nameMatches[0] }
-        if records.count == 1 { return records[0] }
         return nil
     }
 
     private func loadRecords() -> [Record] {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/system_profiler")
-        process.arguments = ["SPDisplaysDataType", "-json", "-detailLevel", "full"]
-        let output = Pipe()
-        process.standardOutput = output
-        process.standardError = Pipe()
-
         do {
-            try process.run()
-            let data = output.fileHandleForReading.readDataToEndOfFile()
-            process.waitUntilExit()
-            guard process.terminationStatus == 0,
+            guard let data = loadData(),
                   let root = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 return []
             }

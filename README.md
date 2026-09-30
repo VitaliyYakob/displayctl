@@ -70,6 +70,15 @@ sudo install -m 0755 .build/release/displayctl /usr/local/bin/displayctl
 After installation, open a new Terminal window and run `displayctl` from any
 directory.
 
+Run the regression tests:
+
+```sh
+swift test
+```
+
+The tests use fixtures and local subprocesses; they do not change connected
+display settings.
+
 ## Quick start
 
 ```sh
@@ -236,6 +245,12 @@ reference preset disables a feature, the utility reports the limitation rather
 than crashing. Compatibility should still be verified after major macOS
 updates.
 
+`info` keeps reporting available properties when a profile, refresh-rate, or
+resolution table cannot be read. The failed table is empty and the reason is
+shown in text output or an optional `warnings` array in JSON. Firmware lookup
+has a five-second timeout and omits metadata when a display cannot be matched
+unambiguously.
+
 Reference presets and CoreGraphics video modes do not share one system
 transaction. Changing both may therefore blank the displays twice, matching
 the behavior of System Settings.
@@ -244,8 +259,9 @@ the behavior of System Settings.
 
 ```text
 App/displayctl/       Swift source files
+Tests/DisplayctlTests/ Regression tests
 Package.swift         Swift Package Manager manifest
-.github/workflows/    GitHub Actions build verification
+.github/workflows/    GitHub Actions build and test verification
 README.ru.md          Russian documentation
 ```
 
