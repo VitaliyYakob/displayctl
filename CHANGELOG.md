@@ -2,6 +2,8 @@
 
 All notable changes to `displayctl` are documented in this file.
 
+[Описание изменений на русском](CHANGELOG.ru.md)
+
 ## 1.0.2 — 2026-09-30
 
 - Fixed Adaptive Sync detection when the optional VRR interface is unavailable.
