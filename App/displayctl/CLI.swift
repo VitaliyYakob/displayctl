@@ -55,7 +55,7 @@ final class DisplayCtlApplication {
             print(Self.help)
             return
         case .version:
-            print("displayctl 1.0.1")
+            print("displayctl 1.0.2")
             return
         default:
             break
